@@ -76,6 +76,34 @@ public abstract class BaseRawKVStore<T> implements RawKVStore, Lifecycle<T> {
     }
 
     @Override
+    public void reverseScan(final byte[] startKey, final byte[] endKey, final KVStoreClosure closure) {
+        reverseScan(startKey, endKey, Integer.MAX_VALUE, closure);
+    }
+
+    @Override
+    public void reverseScan(final byte[] startKey, final byte[] endKey, final boolean readOnlySafe,
+                            final KVStoreClosure closure) {
+        reverseScan(startKey, endKey, Integer.MAX_VALUE, readOnlySafe, closure);
+    }
+
+    @Override
+    public void reverseScan(final byte[] startKey, final byte[] endKey, final boolean readOnlySafe,
+                            final boolean returnValue, final KVStoreClosure closure) {
+        reverseScan(startKey, endKey, Integer.MAX_VALUE, readOnlySafe, returnValue, closure);
+    }
+
+    @Override
+    public void reverseScan(final byte[] startKey, final byte[] endKey, final int limit, final KVStoreClosure closure) {
+        reverseScan(startKey, endKey, limit, true, closure);
+    }
+
+    @Override
+    public void reverseScan(final byte[] startKey, final byte[] endKey, final int limit, final boolean readOnlySafe,
+                            final KVStoreClosure closure) {
+        reverseScan(startKey, endKey, limit, readOnlySafe, true, closure);
+    }
+
+    @Override
     public void execute(final NodeExecutor nodeExecutor, final boolean isLeader, final KVStoreClosure closure) {
         final Timer.Context timeCtx = getTimeContext("EXECUTE");
         try {

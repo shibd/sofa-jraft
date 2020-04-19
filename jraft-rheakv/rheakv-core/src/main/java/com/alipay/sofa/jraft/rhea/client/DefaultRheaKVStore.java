@@ -16,6 +16,7 @@
  */
 package com.alipay.sofa.jraft.rhea.client;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import com.alipay.sofa.jraft.rhea.cmd.store.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,24 +49,6 @@ import com.alipay.sofa.jraft.rhea.client.failover.impl.MapFailoverFuture;
 import com.alipay.sofa.jraft.rhea.client.pd.FakePlacementDriverClient;
 import com.alipay.sofa.jraft.rhea.client.pd.PlacementDriverClient;
 import com.alipay.sofa.jraft.rhea.client.pd.RemotePlacementDriverClient;
-import com.alipay.sofa.jraft.rhea.cmd.store.BatchDeleteRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.BatchPutRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.CompareAndPutRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.ContainsKeyRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.DeleteRangeRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.DeleteRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.GetAndPutRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.GetRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.GetSequenceRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.KeyLockRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.KeyUnlockRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.MergeRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.MultiGetRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.NodeExecuteRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.PutIfAbsentRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.PutRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.ResetSequenceRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.ScanRequest;
 import com.alipay.sofa.jraft.rhea.errors.ApiExceptionHelper;
 import com.alipay.sofa.jraft.rhea.errors.Errors;
 import com.alipay.sofa.jraft.rhea.errors.ErrorsHelper;
@@ -652,6 +636,137 @@ public class DefaultRheaKVStore implements RheaKVStore {
             }
         } else {
             final ScanRequest request = new ScanRequest();
+            request.setStartKey(subStartKey);
+            request.setEndKey(subEndKey);
+            request.setReadOnlySafe(readOnlySafe);
+            request.setReturnValue(returnValue);
+            request.setRegionId(region.getId());
+            request.setRegionEpoch(region.getRegionEpoch());
+            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
+        }
+    }
+
+    @Override
+    public CompletableFuture<List<KVEntry>> reverseScan(final byte[] startKey, final byte[] endKey) {
+        return reverseScan(startKey, endKey, true);
+    }
+
+    @Override
+    public CompletableFuture<List<KVEntry>> reverseScan(final String startKey, final String endKey) {
+        return reverseScan(BytesUtil.writeUtf8(startKey), BytesUtil.writeUtf8(endKey));
+    }
+
+    @Override
+    public CompletableFuture<List<KVEntry>> reverseScan(final byte[] startKey, final byte[] endKey,
+                                                        final boolean readOnlySafe) {
+        return reverseScan(startKey, endKey, readOnlySafe, true);
+    }
+
+    @Override
+    public CompletableFuture<List<KVEntry>> reverseScan(final String startKey, final String endKey,
+                                                        final boolean readOnlySafe) {
+        return reverseScan(BytesUtil.writeUtf8(startKey), BytesUtil.writeUtf8(endKey), readOnlySafe);
+    }
+
+    @Override
+    public CompletableFuture<List<KVEntry>> reverseScan(final byte[] startKey, final byte[] endKey,
+                                                        final boolean readOnlySafe, final boolean returnValue) {
+        checkState();
+        final byte[] realEndKey = BytesUtil.nullToEmpty(endKey);
+        if (startKey != null) {
+            Requires.requireTrue(BytesUtil.compare(startKey, realEndKey) > 0, "startKey must > endKey");
+        }
+        final FutureGroup<List<KVEntry>> futureGroup = internalReverseScan(startKey, realEndKey, readOnlySafe,
+            returnValue, this.failoverRetries, null);
+        return FutureHelper.joinList(futureGroup);
+    }
+
+    @Override
+    public CompletableFuture<List<KVEntry>> reverseScan(final String startKey, final String endKey,
+                                                        final boolean readOnlySafe, final boolean returnValue) {
+        return reverseScan(BytesUtil.writeUtf8(startKey), BytesUtil.writeUtf8(endKey), readOnlySafe, returnValue);
+    }
+
+    @Override
+    public List<KVEntry> bReverseScan(final byte[] startKey, final byte[] endKey) {
+        return FutureHelper.get(reverseScan(startKey, endKey), this.futureTimeoutMillis);
+    }
+
+    @Override
+    public List<KVEntry> bReverseScan(final String startKey, final String endKey) {
+        return FutureHelper.get(reverseScan(startKey, endKey), this.futureTimeoutMillis);
+    }
+
+    @Override
+    public List<KVEntry> bReverseScan(final byte[] startKey, final byte[] endKey, final boolean readOnlySafe) {
+        return FutureHelper.get(reverseScan(startKey, endKey, readOnlySafe), this.futureTimeoutMillis);
+    }
+
+    @Override
+    public List<KVEntry> bReverseScan(final String startKey, final String endKey, final boolean readOnlySafe) {
+        return FutureHelper.get(reverseScan(startKey, endKey, readOnlySafe), this.futureTimeoutMillis);
+    }
+
+    @Override
+    public List<KVEntry> bReverseScan(final byte[] startKey, final byte[] endKey, final boolean readOnlySafe,
+                                      final boolean returnValue) {
+        return FutureHelper.get(reverseScan(startKey, endKey, readOnlySafe, returnValue), this.futureTimeoutMillis);
+    }
+
+    @Override
+    public List<KVEntry> bReverseScan(final String startKey, final String endKey, final boolean readOnlySafe,
+                                      final boolean returnValue) {
+        return FutureHelper.get(reverseScan(startKey, endKey, readOnlySafe, returnValue), this.futureTimeoutMillis);
+    }
+
+    private FutureGroup<List<KVEntry>> internalReverseScan(final byte[] startKey, final byte[] endKey,
+                                                    final boolean readOnlySafe, final boolean returnValue,
+                                                    final int retriesLeft, final Throwable lastCause) {
+        Requires.requireNonNull(endKey, "endKey");
+        final List<Region> regionList = this.pdClient.findRegionsByKeyRange(endKey, startKey, ApiExceptionHelper.isInvalidEpoch(lastCause));
+        Collections.reverse(regionList);
+
+        final List<CompletableFuture<List<KVEntry>>> futures = Lists.newArrayListWithCapacity(regionList.size());
+        final Errors lastError = lastCause == null ? null : Errors.forException(lastCause);
+
+        // 从大 region到小region
+        for (final Region region : regionList) {
+            final byte[] regionEndKey = region.getEndKey();
+            final byte[] regionStartKey = region.getStartKey();
+            final byte[] subStartKey = regionEndKey == null ? startKey : (startKey == null ? regionEndKey : BytesUtil.min(regionEndKey, startKey));
+            final byte[] subEndKey = regionStartKey == null ? endKey : BytesUtil.max(regionStartKey, endKey);
+            final ListRetryCallable<KVEntry> retryCallable = retryCause -> internalReverseScan(subStartKey, subEndKey,
+                    readOnlySafe, returnValue, retriesLeft - 1, retryCause);
+            final ListFailoverFuture<KVEntry> future = new ListFailoverFuture<>(retriesLeft, retryCallable);
+            internalRegionReverseScan(region, subStartKey, subEndKey, readOnlySafe, returnValue, future, retriesLeft, lastError,
+                    this.onlyLeaderRead);
+            futures.add(future);
+        }
+        return new FutureGroup<>(futures);
+    }
+
+    private void internalRegionReverseScan(final Region region, final byte[] subStartKey, final byte[] subEndKey,
+                                    final boolean readOnlySafe, final boolean returnValue,
+                                    final CompletableFuture<List<KVEntry>> future, final int retriesLeft,
+                                    final Errors lastCause, final boolean requireLeader) {
+        final RegionEngine regionEngine = getRegionEngine(region.getId(), requireLeader);
+        // require leader on retry
+        final RetryRunner retryRunner = retryCause -> internalRegionReverseScan(region, subStartKey, subEndKey, readOnlySafe,
+                returnValue, future, retriesLeft - 1, retryCause, true);
+        final FailoverClosure<List<KVEntry>> closure = new FailoverClosureImpl<>(future, false,
+                retriesLeft, retryRunner);
+        if (regionEngine != null) {
+            if (ensureOnValidEpoch(region, regionEngine, closure)) {
+                final RawKVStore rawKVStore = getRawKVStore(regionEngine);
+                if (this.kvDispatcher == null) {
+                    rawKVStore.reverseScan(subStartKey, subEndKey, readOnlySafe, returnValue, closure);
+                } else {
+                    this.kvDispatcher.execute(
+                            () -> rawKVStore.reverseScan(subStartKey, subEndKey, readOnlySafe, returnValue, closure));
+                }
+            }
+        } else {
+            final ReverseScanRequest request = new ReverseScanRequest();
             request.setStartKey(subStartKey);
             request.setEndKey(subEndKey);
             request.setReadOnlySafe(readOnlySafe);
