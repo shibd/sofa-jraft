@@ -12,4 +12,5 @@ target/
 *.bak
 *.log*
 data/
+tmp/
 jraft-core/src/test/resources/log4j2.xml

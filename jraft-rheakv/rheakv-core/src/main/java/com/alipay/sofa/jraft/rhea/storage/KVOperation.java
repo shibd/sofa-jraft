@@ -60,24 +60,26 @@ public class KVOperation implements Serializable {
     public static final byte    MULTI_GET        = 0x0b;
     /** Scan operation */
     public static final byte    SCAN             = 0x0c;
+    /** Reverse scan operation */
+    public static final byte    REVERSE_SCAN     = 0x0d;
     /** Get and put operation */
-    public static final byte    GET_PUT          = 0x0d;
+    public static final byte    GET_PUT          = 0x0e;
     /** Merge operation */
-    public static final byte    MERGE            = 0x0e;
+    public static final byte    MERGE            = 0x0f;
     /** Reset sequence operation */
-    public static final byte    RESET_SEQUENCE   = 0x0f;
+    public static final byte    RESET_SEQUENCE   = 0x10;
 
     // split operation ***********************************
     /** Range split operation */
-    public static final byte    RANGE_SPLIT      = 0x10;
+    public static final byte    RANGE_SPLIT      = 0x11;
     /** Compare and put operation */
-    public static final byte    COMPARE_PUT      = 0x11;
+    public static final byte    COMPARE_PUT      = 0x12;
     /** Delete list operation */
-    public static final byte    DELETE_LIST      = 0x12;
+    public static final byte    DELETE_LIST      = 0x13;
     /** Contains key operation */
-    public static final byte    CONTAINS_KEY     = 0x13;
+    public static final byte    CONTAINS_KEY     = 0x14;
 
-    public static final byte    EOF              = 0x14;
+    public static final byte    EOF              = 0x15;
 
     private static final byte[] VALID_OPS;
 
@@ -199,6 +201,11 @@ public class KVOperation implements Serializable {
     public static KVOperation createScan(final byte[] startKey, final byte[] endKey, final int limit,
                                          final boolean returnValue) {
         return new KVOperation(startKey, endKey, Pair.of(limit, returnValue), SCAN);
+    }
+
+    public static KVOperation createReverseScan(final byte[] startKey, final byte[] endKey, final int limit,
+                                                final boolean returnValue) {
+        return new KVOperation(startKey, endKey, Pair.of(limit, returnValue), REVERSE_SCAN);
     }
 
     public static KVOperation createGetAndPut(final byte[] key, final byte[] value) {
@@ -364,6 +371,8 @@ public class KVOperation implements Serializable {
                 return "MULTI_GET";
             case SCAN:
                 return "SCAN";
+            case REVERSE_SCAN:
+                return "REVERSE_SCAN";
             case GET_PUT:
                 return "GET_PUT";
             case COMPARE_PUT:

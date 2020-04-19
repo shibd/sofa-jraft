@@ -130,7 +130,7 @@ import com.lmax.disruptor.dsl.ProducerType;
  * The raft replica node implementation.
  *
  * @author boyan (boyan@alibaba-inc.com)
- *
+ * <p>
  * 2018-Apr-03 4:26:51 PM
  */
 public class NodeImpl implements Node, RaftServerService {
@@ -164,7 +164,9 @@ public class NodeImpl implements Node, RaftServerService {
     public static final AtomicInteger                                      GLOBAL_NUM_NODES         = new AtomicInteger(
                                                                                                         0);
 
-    /** Internal states */
+    /**
+     * Internal states
+     */
     private final ReadWriteLock                                            readWriteLock            = new ReentrantReadWriteLock();
     protected final Lock                                                   writeLock                = this.readWriteLock
                                                                                                         .writeLock();
@@ -180,12 +182,16 @@ public class NodeImpl implements Node, RaftServerService {
     private final Ballot                                                   prevVoteCtx              = new Ballot();
     private ConfigurationEntry                                             conf;
     private StopTransferArg                                                stopTransferArg;
-    /** Raft group and node options and identifier */
+    /**
+     * Raft group and node options and identifier
+     */
     private final String                                                   groupId;
     private NodeOptions                                                    options;
     private RaftOptions                                                    raftOptions;
     private final PeerId                                                   serverId;
-    /** Other services */
+    /**
+     * Other services
+     */
     private final ConfigurationCtx                                         confCtx;
     private LogStorage                                                     logStorage;
     private RaftMetaStorage                                                metaStorage;
@@ -199,7 +205,9 @@ public class NodeImpl implements Node, RaftServerService {
     private final List<Closure>                                            shutdownContinuations    = new ArrayList<>();
     private RaftClientService                                              rpcService;
     private ReadOnlyService                                                readOnlyService;
-    /** Timers */
+    /**
+     * Timers
+     */
     private Scheduler                                                      timerManager;
     private RepeatedTimer                                                  electionTimer;
     private RepeatedTimer                                                  voteTimer;
@@ -207,28 +215,38 @@ public class NodeImpl implements Node, RaftServerService {
     private RepeatedTimer                                                  snapshotTimer;
     private ScheduledFuture<?>                                             transferTimer;
     private ThreadId                                                       wakingCandidate;
-    /** Disruptor to run node service */
+    /**
+     * Disruptor to run node service
+     */
     private Disruptor<LogEntryAndClosure>                                  applyDisruptor;
     private RingBuffer<LogEntryAndClosure>                                 applyQueue;
 
-    /** Metrics*/
+    /**
+     * Metrics
+     */
     private NodeMetrics                                                    metrics;
 
     private NodeId                                                         nodeId;
     private JRaftServiceFactory                                            serviceFactory;
 
-    /** ReplicatorStateListeners */
+    /**
+     * ReplicatorStateListeners
+     */
     private final CopyOnWriteArrayList<Replicator.ReplicatorStateListener> replicatorStateListeners = new CopyOnWriteArrayList<>();
-    /** Node's target leader election priority value */
+    /**
+     * Node's target leader election priority value
+     */
     private volatile int                                                   targetPriority;
-    /** The number of elections time out for current node */
+    /**
+     * The number of elections time out for current node
+     */
     private volatile int                                                   electionTimeoutCounter;
 
     /**
      * Node service event.
      *
      * @author boyan (boyan@alibaba-inc.com)
-     *
+     * <p>
      * 2018-Apr-03 4:29:55 PM
      */
     private static class LogEntryAndClosure {
@@ -257,7 +275,7 @@ public class NodeImpl implements Node, RaftServerService {
      * Event handler.
      *
      * @author boyan (boyan@alibaba-inc.com)
-     *
+     * <p>
      * 2018-Apr-03 4:30:07 PM
      */
     private class LogEntryAndClosureHandler implements EventHandler<LogEntryAndClosure> {
@@ -290,7 +308,7 @@ public class NodeImpl implements Node, RaftServerService {
      * Configuration commit context.
      *
      * @author boyan (boyan@alibaba-inc.com)
-     *
+     * <p>
      * 2018-Apr-03 4:29:38 PM
      */
     private static class ConfigurationCtx {
@@ -586,6 +604,7 @@ public class NodeImpl implements Node, RaftServerService {
         boolean doUnlock = true;
         this.writeLock.lock();
         try {
+            System.out.println("调度器执行:" + System.currentTimeMillis());
             if (this.state != State.STATE_FOLLOWER) {
                 return;
             }
@@ -602,6 +621,7 @@ public class NodeImpl implements Node, RaftServerService {
 
             doUnlock = false;
             preVote();
+            System.out.println("发起选举:" + System.currentTimeMillis());
 
         } finally {
             if (doUnlock) {
@@ -619,6 +639,8 @@ public class NodeImpl implements Node, RaftServerService {
      */
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     private boolean allowLaunchElection() {
+
+        System.out.println("触发选举:" + System.currentTimeMillis());
 
         // Priority 0 is a special value so that a node will never participate in election.
         if (this.serverId.isPriorityNotElected()) {
@@ -669,7 +691,6 @@ public class NodeImpl implements Node, RaftServerService {
      * then compute and update the target priority value.
      *
      * @param inLock whether the writeLock has already been locked in other place.
-     *
      */
     private void checkAndSetConfiguration(final boolean inLock) {
         if (!inLock) {
@@ -700,7 +721,6 @@ public class NodeImpl implements Node, RaftServerService {
      * Get max priority value for all nodes in the same Raft group, and update current node's target priority value.
      *
      * @param peerIds peer nodes in the same Raft group
-     *
      */
     private int getMaxPriorityOfNodes(final List<PeerId> peerIds) {
         Requires.requireNonNull(peerIds, "Null peer list");
@@ -1341,16 +1361,16 @@ public class NodeImpl implements Node, RaftServerService {
                 final LogEntryAndClosure task = tasks.get(i);
                 if (task.expectedTerm != -1 && task.expectedTerm != this.currTerm) {
                     LOG.debug("Node {} can't apply task whose expectedTerm={} doesn't match currTerm={}.", getNodeId(),
-                        task.expectedTerm, this.currTerm);
+                            task.expectedTerm, this.currTerm);
                     if (task.done != null) {
                         final Status st = new Status(RaftError.EPERM, "expected_term=%d doesn't match current_term=%d",
-                            task.expectedTerm, this.currTerm);
+                                task.expectedTerm, this.currTerm);
                         Utils.runClosureInThread(task.done, st);
                     }
                     continue;
                 }
                 if (!this.ballotBox.appendPendingTask(this.conf.getConf(),
-                    this.conf.isStable() ? null : this.conf.getOldConf(), task.done)) {
+                        this.conf.isStable() ? null : this.conf.getOldConf(), task.done)) {
                     Utils.runClosureInThread(task.done, new Status(RaftError.EINTERNAL, "Fail to append task."));
                     continue;
                 }
@@ -1379,8 +1399,9 @@ public class NodeImpl implements Node, RaftServerService {
 
     /**
      * Returns the JRaft service factory for current node.
-     * @since 1.2.6
+     *
      * @return the service factory
+     * @since 1.2.6
      */
     public JRaftServiceFactory getServiceFactory() {
         return this.serviceFactory;
@@ -1398,6 +1419,7 @@ public class NodeImpl implements Node, RaftServerService {
 
     /**
      * ReadIndex response closure
+     *
      * @author dennis
      */
     private class ReadIndexHeartbeatResponseClosure extends RpcResponseClosureAdapter<AppendEntriesResponse> {
@@ -1586,7 +1608,7 @@ public class NodeImpl implements Node, RaftServerService {
                     retryTimes++;
                     if (retryTimes > MAX_APPLY_RETRY_TIMES) {
                         Utils.runClosureInThread(task.getDone(),
-                            new Status(RaftError.EBUSY, "Node is busy, has too many tasks."));
+                                new Status(RaftError.EBUSY, "Node is busy, has too many tasks."));
                         LOG.warn("Node {} applyQueue is overload.", getNodeId());
                         this.metrics.recordTimes("apply-task-overload-times", 1);
                         return;
@@ -2054,8 +2076,9 @@ public class NodeImpl implements Node, RaftServerService {
 
     /**
      * Peer catch up callback
-     * @author boyan (boyan@alibaba-inc.com)
      *
+     * @author boyan (boyan@alibaba-inc.com)
+     * <p>
      * 2018-Apr-11 2:10:02 PM
      */
     private static class OnCaughtUp extends CatchUpClosure {
@@ -2198,7 +2221,7 @@ public class NodeImpl implements Node, RaftServerService {
      * Configuration changed callback.
      *
      * @author boyan (boyan@alibaba-inc.com)
-     *
+     * <p>
      * 2018-Apr-11 2:53:43 PM
      */
     private class ConfigurationChangeDone implements Closure {
@@ -2573,7 +2596,7 @@ public class NodeImpl implements Node, RaftServerService {
                     continue;
                 }
                 if (!this.rpcService.connect(peer.getEndpoint())) {
-                    LOG.warn("Node {} channel init failed, address={}.", getNodeId(), peer.getEndpoint());
+                    //                    LOG.warn("Node {} channel init failed, address={}.", getNodeId(), peer.getEndpoint());
                     continue;
                 }
                 final OnPreVoteRpcDone done = new OnPreVoteRpcDone(peer, this.currTerm);
@@ -2674,7 +2697,7 @@ public class NodeImpl implements Node, RaftServerService {
                     final CountDownLatch latch = new CountDownLatch(1);
                     this.shutdownLatch = latch;
                     Utils.runInThread(
-                        () -> this.applyQueue.publishEvent((event, sequence) -> event.shutdownLatch = latch));
+                            () -> this.applyQueue.publishEvent((event, sequence) -> event.shutdownLatch = latch));
                 } else {
                     final int num = GLOBAL_NUM_NODES.decrementAndGet();
                     LOG.info("The number of active nodes decrement to {}.", num);
@@ -2798,7 +2821,6 @@ public class NodeImpl implements Node, RaftServerService {
      * retrieve cluster peers info, you should use {@link #listPeers()} instead.
      *
      * @return current configuration.
-     *
      * @since 1.0.3
      */
     public Configuration getCurrentConf() {
@@ -3040,7 +3062,7 @@ public class NodeImpl implements Node, RaftServerService {
         try {
             if (this.state != State.STATE_LEADER) {
                 LOG.warn("Node {} can't transfer leadership to peer {} as it is in state {}.", getNodeId(), peer,
-                    this.state);
+                        this.state);
                 return new Status(this.state == State.STATE_TRANSFERRING ? RaftError.EBUSY : RaftError.EPERM,
                         "Not a leader");
             }
@@ -3058,8 +3080,8 @@ public class NodeImpl implements Node, RaftServerService {
                 // completed so that the peer's configuration is up-to-date when it
                 // receives the TimeOutNowRequest.
                 LOG.warn(
-                    "Node {} refused to transfer leadership to peer {} when the leader is changing the configuration.",
-                    getNodeId(), peer);
+                        "Node {} refused to transfer leadership to peer {} when the leader is changing the configuration.",
+                        getNodeId(), peer);
                 return new Status(RaftError.EBUSY, "Changing the configuration");
             }
 
@@ -3078,7 +3100,7 @@ public class NodeImpl implements Node, RaftServerService {
             }
             if (!this.conf.contains(peerId)) {
                 LOG.info("Node {} refused to transfer leadership to peer {} as it is not in {}.", getNodeId(), peer,
-                    this.conf);
+                        this.conf);
                 return new Status(RaftError.EINVAL, "Not in current configuration");
             }
 
@@ -3089,13 +3111,13 @@ public class NodeImpl implements Node, RaftServerService {
             }
             this.state = State.STATE_TRANSFERRING;
             final Status status = new Status(RaftError.ETRANSFERLEADERSHIP,
-                "Raft leader is transferring leadership to %s", peerId);
+                    "Raft leader is transferring leadership to %s", peerId);
             onLeaderStop(status);
             LOG.info("Node {} starts to transfer leadership to peer {}.", getNodeId(), peer);
             final StopTransferArg stopArg = new StopTransferArg(this, this.currTerm, peerId);
             this.stopTransferArg = stopArg;
             this.transferTimer = this.timerManager.schedule(() -> onTransferTimeout(stopArg),
-                this.options.getElectionTimeoutMs(), TimeUnit.MILLISECONDS);
+                    this.options.getElectionTimeoutMs(), TimeUnit.MILLISECONDS);
 
         } finally {
             this.writeLock.unlock();

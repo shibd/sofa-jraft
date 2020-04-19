@@ -23,6 +23,7 @@ import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.error.RemotingException;
+import com.alipay.sofa.jraft.example.counter.rpc.GetValueRequest;
 import com.alipay.sofa.jraft.example.counter.rpc.IncrementAndGetRequest;
 import com.alipay.sofa.jraft.option.CliOptions;
 import com.alipay.sofa.jraft.rpc.InvokeCallback;
@@ -55,8 +56,9 @@ public class CounterClient {
         }
 
         final PeerId leader = RouteTable.getInstance().selectLeader(groupId);
+
         System.out.println("Leader is " + leader);
-        final int n = 1000;
+        final int n = 10;
         final CountDownLatch latch = new CountDownLatch(n);
         final long start = System.currentTimeMillis();
         for (int i = 0; i < n; i++) {
@@ -64,14 +66,41 @@ public class CounterClient {
         }
         latch.await();
         System.out.println(n + " ops, cost : " + (System.currentTimeMillis() - start) + " ms.");
+
+        //        getValue(cliClientService, leader);
+
         System.exit(0);
+    }
+
+    private static void getValue(CliClientServiceImpl cliClientService, PeerId leader) throws InterruptedException,
+                                                                                      RemotingException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final GetValueRequest request = new GetValueRequest();
+        cliClientService.getRpcClient().invokeAsync(leader.getEndpoint(), request, new InvokeCallback() {
+            @Override
+            public void complete(Object result, Throwable err) {
+                if (err == null) {
+                    System.out.println("get result:" + result);
+                    latch.countDown();
+                } else {
+                    err.printStackTrace();
+                    latch.countDown();
+                }
+            }
+
+            @Override
+            public Executor executor() {
+                return null;
+            }
+        }, 50000);
+        latch.await();
     }
 
     private static void incrementAndGet(final CliClientServiceImpl cliClientService, final PeerId leader,
                                         final long delta, CountDownLatch latch) throws RemotingException,
                                                                                InterruptedException {
         final IncrementAndGetRequest request = new IncrementAndGetRequest();
-        request.setDelta(delta);
+        request.setDelta(1);
         cliClientService.getRpcClient().invokeAsync(leader.getEndpoint(), request, new InvokeCallback() {
 
             @Override
