@@ -16,21 +16,20 @@
  */
 package com.alipay.sofa.jraft.example.counter;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.commons.io.FileUtils;
-
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.RaftGroupService;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.PeerId;
+import com.alipay.sofa.jraft.example.counter.rpc.CounterRpc;
 import com.alipay.sofa.jraft.example.counter.rpc.GetValueRequestProcessor;
 import com.alipay.sofa.jraft.example.counter.rpc.IncrementAndGetRequestProcessor;
-import com.alipay.sofa.jraft.example.counter.rpc.ValueResponse;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import com.alipay.sofa.jraft.rpc.RpcServer;
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Counter server that keeps a counter value in a raft group.
@@ -41,8 +40,8 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
  */
 public class CounterServer {
 
-    private RaftGroupService    raftGroupService;
-    private Node                node;
+    private RaftGroupService raftGroupService;
+    private Node node;
     private CounterStateMachine fsm;
 
     public CounterServer(final String dataPath, final String groupId, final PeerId serverId,
@@ -88,8 +87,8 @@ public class CounterServer {
     /**
      * Redirect request to new leader
      */
-    public ValueResponse redirect() {
-        final ValueResponse response = new ValueResponse();
+    public CounterRpc.ValueResponse redirect() {
+        final CounterRpc.ValueResponse.Builder response = CounterRpc.ValueResponse.newBuilder();
         response.setSuccess(false);
         if (this.node != null) {
             final PeerId leader = this.node.getLeaderId();
@@ -97,7 +96,7 @@ public class CounterServer {
                 response.setRedirect(leader.toString());
             }
         }
-        return response;
+        return response.build();
     }
 
     public static void main(final String[] args) throws IOException {

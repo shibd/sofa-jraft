@@ -16,13 +16,13 @@
  */
 package com.alipay.sofa.jraft.example.counter.snapshot;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Counter snapshot file.
@@ -35,7 +35,7 @@ public class CounterSnapshotFile {
 
     private static final Logger LOG = LoggerFactory.getLogger(CounterSnapshotFile.class);
 
-    private String              path;
+    private String path;
 
     public CounterSnapshotFile(String path) {
         super();
