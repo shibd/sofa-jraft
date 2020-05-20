@@ -86,6 +86,8 @@ public class BoltRpcServer implements RpcServer {
 
     @Override
     public void registerProcessor(final RpcProcessor processor) {
+        String interest = processor.interest();
+        System.out.println("baozidbug: " + interest);
         this.rpcServer.registerUserProcessor(new AsyncUserProcessor<Object>() {
 
             @SuppressWarnings("unchecked")

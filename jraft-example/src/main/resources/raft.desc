@@ -1,0 +1,14 @@
+
+¯
+counter.protojraft"5
+GetValueRequest"
+readOnlySafe (RreadOnlySafe".
+IncrementAndGetRequest
+delta (Rdelta"w
+ValueResponse
+value (Rvalue
+success (Rsuccess
+redirect (	Rredirect
+errorMsg (	RerrorMsgB7
+)com.alipay.sofa.jraft.example.counter.rpcB
+CounterRpc
