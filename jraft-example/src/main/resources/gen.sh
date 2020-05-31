@@ -1,2 +1,2 @@
 #!/bin/bash
-protoc -I=./  --java_out=../java/ counter.proto
+protoc -I=./  --java_out=../java/ rheakv.proto

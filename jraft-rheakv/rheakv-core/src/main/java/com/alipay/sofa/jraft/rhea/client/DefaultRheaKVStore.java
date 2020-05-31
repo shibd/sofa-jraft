@@ -24,6 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
+import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1058,12 +1060,18 @@ public class DefaultRheaKVStore implements RheaKVStore {
                 getRawKVStore(regionEngine).getAndPut(key, value, closure);
             }
         } else {
-            final GetAndPutRequest request = new GetAndPutRequest();
-            request.setKey(key);
-            request.setValue(value);
-            request.setRegionId(region.getId());
-            request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            RheakvRpc.GetAndPutRequest request = RheakvRpc.GetAndPutRequest.newBuilder()
+//                    .setKey(ByteString.copyFrom(key))
+//                    .setValue(ByteString.copyFrom(value))
+//                    .setBaseRequest(
+//                            RheakvRpc.BaseRequest.newBuilder()
+//                                    .setRegionId(region.getId())
+//                                    .setConfVer(region.getRegionEpoch().getConfVer())
+//                                    .setVersion(region.getRegionEpoch().getVersion())
+//                                    .build()
+//                    ).build();
+
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 

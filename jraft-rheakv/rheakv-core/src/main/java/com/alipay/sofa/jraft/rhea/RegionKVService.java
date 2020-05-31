@@ -16,6 +16,7 @@
  */
 package com.alipay.sofa.jraft.rhea;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import com.alipay.sofa.jraft.rhea.cmd.store.BaseRequest;
 import com.alipay.sofa.jraft.rhea.cmd.store.BaseResponse;
 import com.alipay.sofa.jraft.rhea.cmd.store.BatchDeleteRequest;
@@ -74,8 +75,8 @@ public interface RegionKVService {
     /**
      * {@link BaseRequest#GET_PUT}
      */
-    void handleGetAndPutRequest(final GetAndPutRequest request,
-                                final RequestProcessClosure<BaseRequest, BaseResponse<?>> closure);
+    void handleGetAndPutRequest(final RheakvRpc.BaseRequest baseRequest, final RheakvRpc.GetAndPutRequest request,
+                                final RequestProcessClosure<RheakvRpc.BaseRequest, RheakvRpc.BaseResponse> closure);
 
     /**
      * {@link BaseRequest#COMPARE_PUT}
@@ -110,7 +111,8 @@ public interface RegionKVService {
     /**
      * {@link BaseRequest#GET}
      */
-    void handleGetRequest(final GetRequest request, final RequestProcessClosure<BaseRequest, BaseResponse<?>> closure);
+    void handleGetRequest(final RheakvRpc.BaseRequest baseRequest, final RheakvRpc.GetRequest request,
+                          final RequestProcessClosure<RheakvRpc.BaseRequest, RheakvRpc.BaseResponse> closure);
 
     /**
      * {@link BaseRequest#MULTI_GET}

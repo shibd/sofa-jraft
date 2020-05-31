@@ -19,6 +19,8 @@ package com.alipay.sofa.jraft.rhea;
 import java.util.List;
 import java.util.Map;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
+import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -190,31 +192,37 @@ public class DefaultRegionKVService implements RegionKVService {
     }
 
     @Override
-    public void handleGetAndPutRequest(final GetAndPutRequest request,
-                                       final RequestProcessClosure<BaseRequest, BaseResponse<?>> closure) {
-        final GetAndPutResponse response = new GetAndPutResponse();
-        response.setRegionId(getRegionId());
-        response.setRegionEpoch(getRegionEpoch());
+    public void handleGetAndPutRequest(final RheakvRpc.BaseRequest baseRequest,
+                                       final RheakvRpc.GetAndPutRequest request,
+                                       final RequestProcessClosure<RheakvRpc.BaseRequest, RheakvRpc.BaseResponse> closure) {
+
+        final RheakvRpc.BaseResponse.Builder baseResponse = RheakvRpc.BaseResponse.newBuilder()
+            .setRegionId(getRegionId()).setConfVer(getRegionEpoch().getConfVer())
+            .setVersion(getRegionEpoch().getVersion());
         try {
-            KVParameterRequires.requireSameEpoch(request, getRegionEpoch());
-            final byte[] key = KVParameterRequires.requireNonNull(request.getKey(), "getAndPut.key");
-            final byte[] value = KVParameterRequires.requireNonNull(request.getValue(), "getAndPut.value");
+            KVParameterRequires.requireSameEpoch(baseRequest, getRegionEpoch());
+
+            final byte[] key = KVParameterRequires.requireNonNull(request.getKey().toByteArray(), "getAndPut.key");
+            final byte[] value = KVParameterRequires
+                .requireNonNull(request.getValue().toByteArray(), "getAndPut.value");
+
             this.rawKVStore.getAndPut(key, value, new BaseKVStoreClosure() {
 
                 @Override
                 public void run(final Status status) {
                     if (status.isOk()) {
-                        response.setValue((byte[]) getData());
+                        baseResponse.setValue(ByteString.copyFrom((byte[]) getData()));
                     } else {
-                        setFailure(request, response, status, getError());
+                        setFailure(baseRequest, baseResponse, status, getError());
                     }
-                    closure.sendResponse(response);
+                    closure.sendResponse(baseResponse.build());
                 }
             });
         } catch (final Throwable t) {
             LOG.error("Failed to handle: {}, {}.", request, StackTraceUtil.stackTrace(t));
-            response.setError(Errors.forException(t));
-            closure.sendResponse(response);
+            // todo error设置为字节流,直接反序列化吧
+            //            baseResponse.setError(Errors.forException(t));
+            closure.sendResponse(baseResponse.build());
         }
     }
 
@@ -363,30 +371,31 @@ public class DefaultRegionKVService implements RegionKVService {
     }
 
     @Override
-    public void handleGetRequest(final GetRequest request,
-                                 final RequestProcessClosure<BaseRequest, BaseResponse<?>> closure) {
-        final GetResponse response = new GetResponse();
-        response.setRegionId(getRegionId());
-        response.setRegionEpoch(getRegionEpoch());
+    public void handleGetRequest(final RheakvRpc.BaseRequest baseRequest, final RheakvRpc.GetRequest request,
+                                 final RequestProcessClosure<RheakvRpc.BaseRequest, RheakvRpc.BaseResponse> closure) {
+        final RheakvRpc.BaseResponse.Builder baseResponse = RheakvRpc.BaseResponse.newBuilder()
+            .setRegionId(getRegionId()).setConfVer(getRegionEpoch().getConfVer())
+            .setVersion(getRegionEpoch().getVersion());
         try {
-            KVParameterRequires.requireSameEpoch(request, getRegionEpoch());
-            final byte[] key = KVParameterRequires.requireNonNull(request.getKey(), "get.key");
-            this.rawKVStore.get(key, request.isReadOnlySafe(), new BaseKVStoreClosure() {
+            KVParameterRequires.requireSameEpoch(baseRequest, getRegionEpoch());
+            final byte[] key = KVParameterRequires.requireNonNull(request.getKey().toByteArray(), "get.key");
+            this.rawKVStore.get(key, request.getReadOnlySafe(), new BaseKVStoreClosure() {
 
                 @Override
                 public void run(final Status status) {
                     if (status.isOk()) {
-                        response.setValue((byte[]) getData());
+                        baseResponse.setValue(ByteString.copyFrom((byte[]) getData()));
                     } else {
-                        setFailure(request, response, status, getError());
+                        setFailure(baseRequest, baseResponse, status, getError());
                     }
-                    closure.sendResponse(response);
+                    closure.sendResponse(baseResponse.build());
                 }
             });
         } catch (final Throwable t) {
             LOG.error("Failed to handle: {}, {}.", request, StackTraceUtil.stackTrace(t));
-            response.setError(Errors.forException(t));
-            closure.sendResponse(response);
+            // todo error设置为字节流,直接反序列化吧
+            //            baseResponse.setError(Errors.forException(t));
+            closure.sendResponse(baseResponse.build());
         }
     }
 
@@ -659,6 +668,12 @@ public class DefaultRegionKVService implements RegionKVService {
             response.setError(Errors.forException(t));
             closure.sendResponse(response);
         }
+    }
+
+    private static void setFailure(final RheakvRpc.BaseRequest request, final RheakvRpc.BaseResponse.Builder response,
+                                   final Status status, final Errors error) {
+        //        response.setError(error == null ? Errors.STORAGE_ERROR : error);
+        LOG.error("Failed to handle: {}, status: {}, error: {}.", request, status, error);
     }
 
     private static void setFailure(final BaseRequest request, final BaseResponse<?> response, final Status status,

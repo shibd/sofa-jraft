@@ -18,6 +18,7 @@ package com.alipay.sofa.jraft.rhea.cmd.store;
 
 import java.io.Serializable;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import com.alipay.sofa.jraft.rhea.metadata.RegionEpoch;
 
 /**
@@ -74,4 +75,5 @@ public abstract class BaseRequest implements Serializable {
     public String toString() {
         return "BaseRequest{" + "regionId=" + regionId + ", regionEpoch=" + regionEpoch + '}';
     }
+
 }

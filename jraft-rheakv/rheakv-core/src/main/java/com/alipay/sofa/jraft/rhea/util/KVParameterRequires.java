@@ -18,6 +18,7 @@ package com.alipay.sofa.jraft.rhea.util;
 
 import java.util.List;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import com.alipay.sofa.jraft.rhea.cmd.store.BaseRequest;
 import com.alipay.sofa.jraft.rhea.errors.Errors;
 import com.alipay.sofa.jraft.rhea.errors.InvalidParameterException;
@@ -41,6 +42,21 @@ public final class KVParameterRequires {
             throw Errors.INVALID_REGION_VERSION.exception();
         }
         throw Errors.INVALID_REGION_EPOCH.exception();
+    }
+
+    public static void requireSameEpoch(final RheakvRpc.BaseRequest request, final RegionEpoch current) {
+        // todo 转换
+        //        RegionEpoch requestEpoch = request.getRegionEpoch();
+        //        if (current.equals(requestEpoch)) {
+        //            return;
+        //        }
+        //        if (current.getConfVer() != requestEpoch.getConfVer()) {
+        //            throw Errors.INVALID_REGION_MEMBERSHIP.exception();
+        //        }
+        //        if (current.getVersion() != requestEpoch.getVersion()) {
+        //            throw Errors.INVALID_REGION_VERSION.exception();
+        //        }
+        //        throw Errors.INVALID_REGION_EPOCH.exception();
     }
 
     public static <T> T requireNonNull(final T target, final String message) {

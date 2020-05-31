@@ -153,12 +153,12 @@ public class CounterServer {
         final CounterServer counterServer = new CounterServer(dataPath, groupId, serverId, nodeOptions);
         System.out.println("Started counter server at port:"
                            + counterServer.getNode().getNodeId().getPeerId().getPort());
-        while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        //        while (true) {
+        //            try {
+        //                Thread.sleep(1000);
+        //            } catch (InterruptedException e) {
+        //                e.printStackTrace();
+        //            }
+        //        }
     }
 }
