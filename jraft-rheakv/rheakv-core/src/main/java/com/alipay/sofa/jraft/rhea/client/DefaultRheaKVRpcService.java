@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,13 +90,13 @@ public class DefaultRheaKVRpcService implements RheaKVRpcService {
     }
 
     @Override
-    public <V> CompletableFuture<V> callAsyncWithRpc(final BaseRequest request, final FailoverClosure<V> closure,
+    public <V> CompletableFuture<V> callAsyncWithRpc(final RheakvRpc.BaseRequest request, final FailoverClosure<V> closure,
                                                      final Errors lastCause) {
         return callAsyncWithRpc(request, closure, lastCause, true);
     }
 
     @Override
-    public <V> CompletableFuture<V> callAsyncWithRpc(final BaseRequest request, final FailoverClosure<V> closure,
+    public <V> CompletableFuture<V> callAsyncWithRpc(final RheakvRpc.BaseRequest request, final FailoverClosure<V> closure,
                                                      final Errors lastCause, final boolean requireLeader) {
         final boolean forceRefresh = ErrorsHelper.isInvalidPeer(lastCause);
         final Endpoint endpoint = getRpcEndpoint(request.getRegionId(), forceRefresh, this.rpcTimeoutMillis,
@@ -121,7 +122,7 @@ public class DefaultRheaKVRpcService implements RheaKVRpcService {
         }
     }
 
-    private <V> void internalCallAsyncWithRpc(final Endpoint endpoint, final BaseRequest request,
+    private <V> void internalCallAsyncWithRpc(final Endpoint endpoint, final RheakvRpc.BaseRequest request,
                                               final FailoverClosure<V> closure) {
         final InvokeContext invokeCtx = new InvokeContext();
         invokeCtx.put(BoltRpcClient.BOLT_CTX, ExtSerializerSupports.getInvokeContext());

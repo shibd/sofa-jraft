@@ -18,6 +18,9 @@ package com.alipay.sofa.jraft.example.rheakv;
 
 import java.util.concurrent.CompletableFuture;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
+import com.alipay.sofa.jraft.rpc.impl.MarshallerHelper;
+import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +39,36 @@ public class GetAndPutExample {
     private static final Logger LOG = LoggerFactory.getLogger(GetAndPutExample.class);
 
     public static void main(final String[] args) throws Exception {
+        // 注册 request 和 response proto
+        RpcFactoryHelper.rpcFactory().registerProtobufSerializer(RheakvRpc.BaseRequest.class.getName(),
+                RheakvRpc.BaseRequest.getDefaultInstance());
+        RpcFactoryHelper.rpcFactory().registerProtobufSerializer(RheakvRpc.BaseResponse.class.getName(),
+                RheakvRpc.BaseResponse.getDefaultInstance());
+
+        RpcFactoryHelper.rpcFactory().registerProtobufSerializer(RheakvRpc.GetRequest.class.getName(),
+                RheakvRpc.GetRequest.getDefaultInstance());
+        RpcFactoryHelper.rpcFactory().registerProtobufSerializer(RheakvRpc.GetResponse.class.getName(),
+                RheakvRpc.GetResponse.getDefaultInstance());
+
+        RpcFactoryHelper.rpcFactory().registerProtobufSerializer(RheakvRpc.GetAndPutRequest.class.getName(),
+                RheakvRpc.GetAndPutRequest.getDefaultInstance());
+        RpcFactoryHelper.rpcFactory().registerProtobufSerializer(RheakvRpc.GetAndPutResponse.class.getName(),
+                RheakvRpc.GetAndPutResponse.getDefaultInstance());
+
+        // 注册 request 和response 的映射关系
+        MarshallerHelper.registerRespInstance(RheakvRpc.GetRequest.class.getName(),
+                RheakvRpc.GetResponse.getDefaultInstance());
+        MarshallerHelper.registerRespInstance(RheakvRpc.GetAndPutRequest.class.getName(),
+                RheakvRpc.GetAndPutResponse.getDefaultInstance());
+
+        MarshallerHelper.registerRespInstance(RheakvRpc.BaseRequest.class.getName(),
+                RheakvRpc.BaseResponse.getDefaultInstance());
+
+
         final Client client = new Client();
         client.init();
+
+
         put(client.getRheaKVStore());
         client.shutdown();
     }

@@ -415,11 +415,17 @@ public class DefaultRheaKVStore implements RheaKVStore {
                 getRawKVStore(regionEngine).get(key, readOnlySafe, closure);
             }
         } else {
-            final GetRequest request = new GetRequest();
-            request.setKey(key);
-            request.setReadOnlySafe(readOnlySafe);
-            request.setRegionId(region.getId());
-            request.setRegionEpoch(region.getRegionEpoch());
+            final RheakvRpc.GetRequest getRequest = RheakvRpc.GetRequest.newBuilder()
+                    .setKey(ByteString.copyFrom(key))
+                    .setReadOnlySafe(readOnlySafe)
+                    .build();
+            final RheakvRpc.BaseRequest request = RheakvRpc.BaseRequest.newBuilder()
+                    .setRegionId(region.getId())
+                    .setConfVer(region.getRegionEpoch().getConfVer())
+                    .setVersion(region.getRegionEpoch().getVersion())
+                    .setRequestType(RheakvRpc.BaseRequest.RequestType.get)
+                    .setExtension(RheakvRpc.GetRequest.body, getRequest)
+                    .build();
             this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
         }
     }
@@ -490,7 +496,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setReadOnlySafe(readOnlySafe);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
         }
     }
 
@@ -534,7 +540,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setKey(key);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -670,7 +676,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
             request.setReverse(reverse);
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
         }
     }
 
@@ -811,7 +817,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setReturnValue(returnValue);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause, requireLeader);
         }
     }
 
@@ -919,7 +925,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setStep(step);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -963,7 +969,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setSeqKey(seqKey);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1019,7 +1025,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setValue(value);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1060,18 +1066,19 @@ public class DefaultRheaKVStore implements RheaKVStore {
                 getRawKVStore(regionEngine).getAndPut(key, value, closure);
             }
         } else {
-//            RheakvRpc.GetAndPutRequest request = RheakvRpc.GetAndPutRequest.newBuilder()
-//                    .setKey(ByteString.copyFrom(key))
-//                    .setValue(ByteString.copyFrom(value))
-//                    .setBaseRequest(
-//                            RheakvRpc.BaseRequest.newBuilder()
-//                                    .setRegionId(region.getId())
-//                                    .setConfVer(region.getRegionEpoch().getConfVer())
-//                                    .setVersion(region.getRegionEpoch().getVersion())
-//                                    .build()
-//                    ).build();
+            final RheakvRpc.GetAndPutRequest getAndPutRequest = RheakvRpc.GetAndPutRequest.newBuilder()
+                    .setKey(ByteString.copyFrom(key))
+                    .setValue(ByteString.copyFrom(value)).build();
 
-//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+            final RheakvRpc.BaseRequest request = RheakvRpc.BaseRequest.newBuilder()
+                    .setRegionId(region.getId())
+                    .setConfVer(region.getRegionEpoch().getConfVer())
+                    .setVersion(region.getRegionEpoch().getVersion())
+                    .setRequestType(RheakvRpc.BaseRequest.RequestType.getAndPut)
+                    .setExtension(RheakvRpc.GetAndPutRequest.body, getAndPutRequest)
+                    .build();
+
+            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1120,7 +1127,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setUpdate(update);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1156,7 +1163,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setValue(value);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1216,7 +1223,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setKvEntries(subEntries);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1261,7 +1268,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setValue(value);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1304,7 +1311,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setKey(key);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1407,7 +1414,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setKeys(subKeys);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1429,7 +1436,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setEndKey(subEndKey);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1463,7 +1470,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setNodeExecutor(executor);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1518,7 +1525,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setAcquirer(acquirer);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
@@ -1550,7 +1557,7 @@ public class DefaultRheaKVStore implements RheaKVStore {
             request.setAcquirer(acquirer);
             request.setRegionId(region.getId());
             request.setRegionEpoch(region.getRegionEpoch());
-            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
+//            this.rheaKVRpcService.callAsyncWithRpc(request, closure, lastCause);
         }
     }
 
