@@ -16,6 +16,7 @@
  */
 package com.alipay.sofa.jraft.rhea.errors;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.slf4j.Logger;

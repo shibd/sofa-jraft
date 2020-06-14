@@ -25,8 +25,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.protobuf.ExtensionRegistry;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
 import io.grpc.ServerCallHandler;
@@ -73,6 +75,8 @@ public class GrpcServer implements RpcServer {
     private final AtomicBoolean                       started              = new AtomicBoolean(false);
 
     private ExecutorService                           defaultExecutor;
+    // todo 临时使用
+    public static final Map<String, ExtensionRegistry> extensionRegistrys       = new ConcurrentHashMap<>();
 
     public GrpcServer(Server server, MutableHandlerRegistry handlerRegistry, Map<String, Message> parserClasses,
                       MarshallerRegistry marshallerRegistry) {
@@ -131,6 +135,13 @@ public class GrpcServer implements RpcServer {
     public void registerProcessor(final RpcProcessor processor) {
         final String interest = processor.interest();
         final Message reqIns = Requires.requireNonNull(this.parserClasses.get(interest), "null default instance: " + interest);
+
+        // todo 待调整位置
+        ExtensionRegistry extensionRegistry = extensionRegistrys.get(interest);
+        if (extensionRegistry != null) {
+            ProtoUtils.setExtensionRegistry(extensionRegistry);
+        }
+
         final MethodDescriptor<Message, Message> method = MethodDescriptor //
                 .<Message, Message>newBuilder() //
                 .setType(MethodDescriptor.MethodType.UNARY) //

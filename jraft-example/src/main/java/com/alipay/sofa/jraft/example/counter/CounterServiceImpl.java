@@ -16,13 +16,6 @@
  */
 package com.alipay.sofa.jraft.example.counter;
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alipay.remoting.exception.CodecException;
 import com.alipay.remoting.serialization.SerializerManager;
 import com.alipay.sofa.jraft.Status;
@@ -32,6 +25,12 @@ import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.rhea.StoreEngineHelper;
 import com.alipay.sofa.jraft.rhea.options.StoreEngineOptions;
 import com.alipay.sofa.jraft.util.BytesUtil;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
 
 /**
  * @author likun (saimu.msm@antfin.com)

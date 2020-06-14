@@ -18,6 +18,7 @@ package com.alipay.sofa.jraft.rhea.storage;
 
 import java.util.List;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import com.alipay.sofa.jraft.rhea.util.concurrent.DistributedLock;
 
 /**

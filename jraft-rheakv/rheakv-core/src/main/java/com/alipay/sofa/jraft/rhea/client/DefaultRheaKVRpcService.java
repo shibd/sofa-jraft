@@ -16,24 +16,16 @@
  */
 package com.alipay.sofa.jraft.rhea.client;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.rhea.client.failover.FailoverClosure;
 import com.alipay.sofa.jraft.rhea.client.pd.AbstractPlacementDriverClient;
 import com.alipay.sofa.jraft.rhea.client.pd.PlacementDriverClient;
-import com.alipay.sofa.jraft.rhea.cmd.store.BaseRequest;
-import com.alipay.sofa.jraft.rhea.cmd.store.BaseResponse;
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import com.alipay.sofa.jraft.rhea.errors.Errors;
 import com.alipay.sofa.jraft.rhea.errors.ErrorsHelper;
 import com.alipay.sofa.jraft.rhea.options.RpcOptions;
 import com.alipay.sofa.jraft.rhea.rpc.ExtSerializerSupports;
+import com.alipay.sofa.jraft.rhea.serialization.JavaSerializer;
 import com.alipay.sofa.jraft.rhea.util.concurrent.CallerRunsPolicyWithReport;
 import com.alipay.sofa.jraft.rhea.util.concurrent.NamedThreadFactory;
 import com.alipay.sofa.jraft.rpc.InvokeCallback;
@@ -44,6 +36,13 @@ import com.alipay.sofa.jraft.util.Endpoint;
 import com.alipay.sofa.jraft.util.ExecutorServiceHelper;
 import com.alipay.sofa.jraft.util.Requires;
 import com.alipay.sofa.jraft.util.ThreadPoolUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  *
@@ -89,14 +88,15 @@ public class DefaultRheaKVRpcService implements RheaKVRpcService {
     }
 
     @Override
-    public <V> CompletableFuture<V> callAsyncWithRpc(final BaseRequest request, final FailoverClosure<V> closure,
-                                                     final Errors lastCause) {
+    public <V> CompletableFuture<V> callAsyncWithRpc(final RheakvRpc.BaseRequest request,
+                                                     final FailoverClosure<V> closure, final Errors lastCause) {
         return callAsyncWithRpc(request, closure, lastCause, true);
     }
 
     @Override
-    public <V> CompletableFuture<V> callAsyncWithRpc(final BaseRequest request, final FailoverClosure<V> closure,
-                                                     final Errors lastCause, final boolean requireLeader) {
+    public <V> CompletableFuture<V> callAsyncWithRpc(final RheakvRpc.BaseRequest request,
+                                                     final FailoverClosure<V> closure, final Errors lastCause,
+                                                     final boolean requireLeader) {
         final boolean forceRefresh = ErrorsHelper.isInvalidPeer(lastCause);
         final Endpoint endpoint = getRpcEndpoint(request.getRegionId(), forceRefresh, this.rpcTimeoutMillis,
             requireLeader);
@@ -121,7 +121,7 @@ public class DefaultRheaKVRpcService implements RheaKVRpcService {
         }
     }
 
-    private <V> void internalCallAsyncWithRpc(final Endpoint endpoint, final BaseRequest request,
+    private <V> void internalCallAsyncWithRpc(final Endpoint endpoint, final RheakvRpc.BaseRequest request,
                                               final FailoverClosure<V> closure) {
         final InvokeContext invokeCtx = new InvokeContext();
         invokeCtx.put(BoltRpcClient.BOLT_CTX, ExtSerializerSupports.getInvokeContext());
@@ -130,12 +130,13 @@ public class DefaultRheaKVRpcService implements RheaKVRpcService {
             @Override
             public void complete(final Object result, final Throwable err) {
                 if (err == null) {
-                    final BaseResponse<?> response = (BaseResponse<?>) result;
-                    if (response.isSuccess()) {
-                        closure.setData(response.getValue());
+                    final RheakvRpc.BaseResponse response = (RheakvRpc.BaseResponse) result;
+                    Errors error = (Errors) JavaSerializer.deserialize(response.getError().toByteArray());
+                    if (error.isSuccess()) {
+                        closure.setData(JavaSerializer.deserialize(response.getValue().toByteArray()));
                         closure.run(Status.OK());
                     } else {
-                        closure.setError(response.getError());
+                        closure.setError(error);
                         closure.run(new Status(-1, "RPC failed with address: %s, response: %s", endpoint, response));
                     }
                 } else {

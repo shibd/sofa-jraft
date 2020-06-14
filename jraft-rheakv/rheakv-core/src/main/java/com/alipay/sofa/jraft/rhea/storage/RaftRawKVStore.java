@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

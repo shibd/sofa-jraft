@@ -18,6 +18,9 @@ package com.alipay.sofa.jraft.example.rheakv;
 
 import java.util.concurrent.CompletableFuture;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
+import com.alipay.sofa.jraft.rpc.impl.MarshallerHelper;
+import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +47,8 @@ public class GetExample {
     public static void get(final RheaKVStore rheaKVStore) {
         final byte[] key = writeUtf8("hello");
         final byte[] value = writeUtf8("world");
-        rheaKVStore.bPut(key, value);
+        Boolean aBoolean = rheaKVStore.bPut(key, value);
+        LOG.info("put result={}", aBoolean);
 
         // async get with bytes
         final CompletableFuture<byte[]> f1 = rheaKVStore.get(key);

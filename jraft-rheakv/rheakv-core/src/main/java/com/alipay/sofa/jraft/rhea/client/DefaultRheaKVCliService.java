@@ -16,9 +16,6 @@
  */
 package com.alipay.sofa.jraft.rhea.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.RaftServiceFactory;
 import com.alipay.sofa.jraft.Status;
@@ -26,13 +23,16 @@ import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.CliServiceImpl;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.CliOptions;
-import com.alipay.sofa.jraft.rhea.cmd.store.BaseResponse;
-import com.alipay.sofa.jraft.rhea.cmd.store.RangeSplitRequest;
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
+import com.alipay.sofa.jraft.rhea.errors.Errors;
+import com.alipay.sofa.jraft.rhea.serialization.JavaSerializer;
 import com.alipay.sofa.jraft.rhea.util.StackTraceUtil;
 import com.alipay.sofa.jraft.rpc.CliClientService;
 import com.alipay.sofa.jraft.rpc.RpcClient;
 import com.alipay.sofa.jraft.rpc.impl.AbstractClientService;
 import com.alipay.sofa.jraft.util.Requires;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -75,13 +75,16 @@ public class DefaultRheaKVCliService implements RheaKVCliService {
         if (!st.isOk()) {
             throw new IllegalStateException(st.getErrorMsg());
         }
-        final RangeSplitRequest request = new RangeSplitRequest();
-        request.setRegionId(regionId);
-        request.setNewRegionId(newRegionId);
+        final RheakvRpc.RangeSplitRequest rangeSplitRequest = RheakvRpc.RangeSplitRequest.newBuilder()
+            .setNewRegionId(newRegionId).build();
+        final RheakvRpc.BaseRequest request = RheakvRpc.BaseRequest.newBuilder().setRegionId(regionId)
+            .setRequestType(RheakvRpc.BaseRequest.RequestType.rangeSplit)
+            .setExtension(RheakvRpc.RangeSplitRequest.body, rangeSplitRequest).build();
         try {
-            final BaseResponse<?> response = (BaseResponse<?>) this.rpcClient.invokeSync(leaderId.getEndpoint(),
-                request, this.opts.getTimeoutMs());
-            if (response.isSuccess()) {
+            final RheakvRpc.BaseResponse response = (RheakvRpc.BaseResponse) this.rpcClient.invokeSync(
+                leaderId.getEndpoint(), request, this.opts.getTimeoutMs());
+            Errors error = (Errors) JavaSerializer.deserialize(response.getError().toByteArray());
+            if (error.isSuccess()) {
                 return Status.OK();
             }
             return new Status(-1, "Fail to range split on region %d, error: %s", regionId, response);

@@ -1,0 +1,45 @@
+syntax="proto2";
+
+package counter;
+
+option java_package="com.alipay.sofa.jraft.rhea.cmd.proto";
+option java_outer_classname = "RheakvRpcT1";
+
+message ChatMessage {
+    optional string id = 1;
+    optional string from = 2;
+    optional string to = 3;
+
+    enum Type {
+        chat = 0;
+        groupchat = 1;
+        error = 2;
+    }
+
+    optional Type type = 4;
+
+    enum ContentType {
+        text = 0;
+        image = 1;
+    }
+
+    optional ContentType content_type = 5;
+
+    extensions 100 to 299;
+}
+
+message TextBody {
+    extend ChatMessage {
+        optional TextBody body = 100;
+    }
+
+    optional string content = 1;
+}
+
+message ImageBody {
+    extend ChatMessage {
+        optional ImageBody body = 101;
+    }
+
+    optional string url = 1;
+}

@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
 import org.apache.commons.io.FileUtils;
 import org.rocksdb.BackupEngine;
 import org.rocksdb.BackupInfo;
@@ -85,6 +86,9 @@ import com.alipay.sofa.jraft.util.StorageOptionsFactory;
 import com.alipay.sofa.jraft.util.SystemPropertyUtil;
 import com.alipay.sofa.jraft.util.concurrent.AdjustableSemaphore;
 import com.codahale.metrics.Timer;
+
+import static com.alipay.sofa.jraft.util.BytesUtil.readUtf8;
+import static com.alipay.sofa.jraft.util.BytesUtil.writeUtf8;
 
 /**
  * Local KV store based on RocksDB

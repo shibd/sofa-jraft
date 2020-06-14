@@ -18,6 +18,9 @@ package com.alipay.sofa.jraft.example.rheakv;
 
 import java.util.concurrent.CompletableFuture;
 
+import com.alipay.sofa.jraft.rhea.cmd.proto.RheakvRpc;
+import com.alipay.sofa.jraft.rpc.impl.MarshallerHelper;
+import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
