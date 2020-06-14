@@ -24,6 +24,7 @@ import com.alipay.sofa.jraft.rpc.impl.GrpcServer;
 import com.alipay.sofa.jraft.rpc.impl.MarshallerHelper;
 import com.alipay.sofa.jraft.util.RpcFactoryHelper;
 import com.google.protobuf.ExtensionRegistry;
+import io.grpc.protobuf.ProtoUtils;
 
 /**
  *
@@ -72,7 +73,7 @@ public class Node {
         registry.add(RheakvRpc.RangeSplitRequest.body);
         registry.add(RheakvRpc.ResetSequenceRequest.body);
         registry.add(RheakvRpc.ScanRequest.body);
-        GrpcServer.extensionRegistrys.put(RheakvRpc.BaseRequest.class.getName(), registry);
+        ProtoUtils.setExtensionRegistry(registry);
 
         this.rheaKVStore = new DefaultRheaKVStore();
         this.rheaKVStore.init(this.options);

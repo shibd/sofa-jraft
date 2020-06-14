@@ -74,7 +74,6 @@ public final class StoreEngineHelper {
 
     public static void addKvStoreRequestProcessor(final RpcServer rpcServer, final StoreEngine engine) {
         rpcServer.registerProcessor(new KVCommandProcessor(engine));
-
     }
 
     private static ExecutorService newPool(final int coreThreads, final int maxThreads, final String name) {
